@@ -6,14 +6,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.kashsuks.seekerdisplay.core.TimeTicker
-import com.kashsuks.seekerdisplay.ui.dashboard.DashboardScreen
+import com.kashsuks.seekerdisplay.ui.AppRoot
+import com.kashsuks.seekerdisplay.ui.Screen
 import com.kashsuks.seekerdisplay.ui.dashboard.DashboardState
 import com.kashsuks.seekerdisplay.ui.preview.PlaceholderData
 import com.kashsuks.seekerdisplay.ui.theme.SeekerDisplayTheme
@@ -28,8 +31,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             SeekerDisplayTheme {
                 val context = LocalContext.current
-                val now by produceState(ZonedDateTime.now()) {
-                    TimeTicker.ticks(context).collect { value = it }
+                val showSeconds = false
+                var screen by remember { mutableStateOf(Screen.Dashboard) }
+                // Seconds only tick while the focus clock is on screen, to save battery elsewhere.
+                val tickMs = if (screen == Screen.FocusClock && showSeconds) 1_000L else 60_000L
+                val now by produceState(ZonedDateTime.now(), tickMs) {
+                    TimeTicker.ticks(context, tickMs).collect { value = it }
                 }
                 val state = remember(now) {
                     DashboardState(
@@ -40,7 +47,7 @@ class MainActivity : ComponentActivity() {
                         playback = PlaceholderData.playback,
                     )
                 }
-                DashboardScreen(state, onTimeClick = {}, onMediaClick = {})
+                AppRoot(state, showSeconds, onScreenChanged = { screen = it })
             }
         }
     }
