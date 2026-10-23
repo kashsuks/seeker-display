@@ -5,7 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AcUnit
 import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.material.icons.rounded.FilterDrama
-import androidx.compose.material.icons.rounded.Foggy
+import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.NightsStay
 import androidx.compose.material.icons.rounded.Thunderstorm
 import androidx.compose.material.icons.rounded.Umbrella
@@ -27,7 +27,7 @@ internal fun WeatherSymbol.icon(): ImageVector = when (condition) {
     WeatherCondition.MOSTLY_CLEAR -> if (isDay) Icons.Rounded.WbSunny else Icons.Rounded.NightsStay
     WeatherCondition.PARTLY_CLOUDY -> Icons.Rounded.FilterDrama
     WeatherCondition.CLOUDY -> Icons.Rounded.Cloud
-    WeatherCondition.FOG -> Icons.Rounded.Foggy
+    WeatherCondition.FOG -> Icons.Rounded.BlurOn
     WeatherCondition.DRIZZLE -> Icons.Rounded.WaterDrop
     WeatherCondition.RAIN -> Icons.Rounded.Umbrella
     WeatherCondition.SNOW -> Icons.Rounded.AcUnit
