@@ -5,16 +5,19 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.kashsuks.seekerdisplay.core.TimeTicker
+import com.kashsuks.seekerdisplay.ui.dashboard.DashboardScreen
+import com.kashsuks.seekerdisplay.ui.dashboard.DashboardState
+import com.kashsuks.seekerdisplay.ui.preview.PlaceholderData
+import com.kashsuks.seekerdisplay.ui.theme.SeekerDisplayTheme
+import java.time.ZonedDateTime
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,8 +26,21 @@ class MainActivity : ComponentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         hideSystemBars()
         setContent {
-            Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
-                Text("Seeker Display", color = Color.White)
+            SeekerDisplayTheme {
+                val context = LocalContext.current
+                val now by produceState(ZonedDateTime.now()) {
+                    TimeTicker.ticks(context).collect { value = it }
+                }
+                val state = remember(now) {
+                    DashboardState(
+                        now = now,
+                        weather = PlaceholderData.weather,
+                        events = PlaceholderData.events(now),
+                        calendarPermission = true,
+                        playback = PlaceholderData.playback,
+                    )
+                }
+                DashboardScreen(state, onTimeClick = {}, onMediaClick = {})
             }
         }
     }
