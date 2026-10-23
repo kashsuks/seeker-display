@@ -1,5 +1,8 @@
 package com.kashsuks.seekerdisplay.data.weather
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class WeatherCondition {
     CLEAR,
     MOSTLY_CLEAR,
@@ -13,8 +16,10 @@ enum class WeatherCondition {
 }
 
 /** A condition plus whether it is daytime, which picks the sun or moon variant of the icon. */
+@Serializable
 data class WeatherSymbol(val condition: WeatherCondition, val isDay: Boolean)
 
+@Serializable
 data class HourlySlot(
     /** Hour of day (0-23), or null for the "Now" slot. */
     val hour: Int?,
@@ -22,6 +27,7 @@ data class HourlySlot(
     val symbol: WeatherSymbol,
 )
 
+@Serializable
 data class WeatherData(
     val city: String,
     val tempC: Int,
