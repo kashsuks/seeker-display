@@ -4,6 +4,8 @@ import android.content.Context
 import com.kashsuks.seekerdisplay.data.calendar.CalendarRepository
 import com.kashsuks.seekerdisplay.data.location.CityResolver
 import com.kashsuks.seekerdisplay.data.location.LocationProvider
+import com.kashsuks.seekerdisplay.data.media.LocalMediaSessionSource
+import com.kashsuks.seekerdisplay.data.media.PlaybackRepository
 import com.kashsuks.seekerdisplay.data.settings.SettingsRepository
 import com.kashsuks.seekerdisplay.data.weather.OpenMeteoApi
 import com.kashsuks.seekerdisplay.data.weather.WeatherRepository
@@ -40,4 +42,7 @@ class AppContainer(context: Context) {
     )
 
     val calendar = CalendarRepository(appContext, settings)
+
+    val phoneMedia = LocalMediaSessionSource(appContext)
+    val playback = PlaybackRepository(listOf(phoneMedia))
 }
