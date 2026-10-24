@@ -1,6 +1,7 @@
 package com.kashsuks.seekerdisplay.di
 
 import android.content.Context
+import com.kashsuks.seekerdisplay.data.calendar.CalendarRepository
 import com.kashsuks.seekerdisplay.data.location.CityResolver
 import com.kashsuks.seekerdisplay.data.location.LocationProvider
 import com.kashsuks.seekerdisplay.data.settings.SettingsRepository
@@ -37,4 +38,6 @@ class AppContainer(context: Context) {
         settings = settings,
         json = json,
     )
+
+    val calendar = CalendarRepository(appContext, settings)
 }
