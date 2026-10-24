@@ -57,12 +57,14 @@ class MainActivity : ComponentActivity() {
                     TimeTicker.ticks(context, tickMs).collect { value = it }
                 }
                 val weather by viewModel.weather.collectAsStateWithLifecycle()
-                val state = remember(now, weather) {
+                val events by viewModel.events.collectAsStateWithLifecycle()
+                val calendarPermission by viewModel.calendarPermission.collectAsStateWithLifecycle()
+                val state = remember(now, weather, events, calendarPermission) {
                     DashboardState(
                         now = now,
                         weather = weather,
-                        events = PlaceholderData.events(now),
-                        calendarPermission = true,
+                        events = events,
+                        calendarPermission = calendarPermission,
                         playback = PlaceholderData.playback,
                     )
                 }
@@ -72,7 +74,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestMissingPermissions() {
-        val wanted = arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION)
+        val wanted = arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.READ_CALENDAR)
         val missing = wanted.filter { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
         if (missing.isNotEmpty()) permissionLauncher.launch(missing.toTypedArray())
     }
