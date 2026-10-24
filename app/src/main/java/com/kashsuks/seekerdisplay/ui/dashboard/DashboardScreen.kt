@@ -3,6 +3,7 @@ package com.kashsuks.seekerdisplay.ui.dashboard
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.kashsuks.seekerdisplay.ui.theme.DashColors
 
@@ -21,12 +23,14 @@ fun DashboardScreen(
     state: DashboardState,
     onTimeClick: () -> Unit,
     onMediaClick: () -> Unit,
+    onLongPress: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
         modifier
             .fillMaxSize()
             .background(DashColors.Black)
+            .pointerInput(Unit) { detectTapGestures(onLongPress = { onLongPress() }) }
             .safeDrawingPadding()
             .padding(horizontal = 36.dp, vertical = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(32.dp),

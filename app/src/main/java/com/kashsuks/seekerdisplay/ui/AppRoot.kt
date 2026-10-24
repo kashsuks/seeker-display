@@ -16,11 +16,20 @@ import androidx.compose.runtime.setValue
 import com.kashsuks.seekerdisplay.ui.dashboard.DashboardScreen
 import com.kashsuks.seekerdisplay.ui.dashboard.DashboardState
 import com.kashsuks.seekerdisplay.ui.focusclock.FocusClockScreen
+import com.kashsuks.seekerdisplay.ui.settings.SettingsActions
+import com.kashsuks.seekerdisplay.ui.settings.SettingsScreen
+import com.kashsuks.seekerdisplay.ui.settings.SettingsState
 
-enum class Screen { Dashboard, FocusClock }
+enum class Screen { Dashboard, FocusClock, Settings }
 
 @Composable
-fun AppRoot(state: DashboardState, showSeconds: Boolean, onScreenChanged: (Screen) -> Unit) {
+fun AppRoot(
+    state: DashboardState,
+    showSeconds: Boolean,
+    settingsState: SettingsState,
+    settingsActions: SettingsActions,
+    onScreenChanged: (Screen) -> Unit,
+) {
     var screen by rememberSaveable { mutableStateOf(Screen.Dashboard) }
 
     fun go(target: Screen) {
@@ -43,6 +52,12 @@ fun AppRoot(state: DashboardState, showSeconds: Boolean, onScreenChanged: (Scree
                 state = state,
                 onTimeClick = { go(Screen.FocusClock) },
                 onMediaClick = {},
+                onLongPress = { go(Screen.Settings) },
+            )
+            Screen.Settings -> SettingsScreen(
+                state = settingsState,
+                actions = settingsActions,
+                onBack = { go(Screen.Dashboard) },
             )
             Screen.FocusClock -> FocusClockScreen(
                 now = state.now,

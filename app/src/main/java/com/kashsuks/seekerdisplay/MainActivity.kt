@@ -1,8 +1,11 @@
 package com.kashsuks.seekerdisplay
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -10,6 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -28,6 +32,8 @@ import com.kashsuks.seekerdisplay.ui.DashboardViewModel
 import com.kashsuks.seekerdisplay.ui.Screen
 import com.kashsuks.seekerdisplay.ui.dashboard.DashboardState
 import com.kashsuks.seekerdisplay.ui.preview.PlaceholderData
+import com.kashsuks.seekerdisplay.ui.settings.SettingsActions
+import com.kashsuks.seekerdisplay.ui.settings.SettingsState
 import com.kashsuks.seekerdisplay.ui.theme.SeekerDisplayTheme
 import java.time.ZonedDateTime
 
@@ -36,7 +42,11 @@ class MainActivity : ComponentActivity() {
         viewModelFactory { initializer { DashboardViewModel((application as SeekerApp).container) } }
     }
 
+    /** Bumped whenever permissions may have changed so Compose re-reads their status. */
+    private var permissionVersion by mutableIntStateOf(0)
+
     private val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        permissionVersion++
         viewModel.onPermissionsChanged()
     }
 
@@ -68,9 +78,42 @@ class MainActivity : ComponentActivity() {
                         playback = PlaceholderData.playback,
                     )
                 }
-                AppRoot(state, showSeconds, onScreenChanged = { screen = it })
+                val calendars by viewModel.calendars.collectAsStateWithLifecycle()
+                val hiddenCalendars by viewModel.hiddenCalendarIds.collectAsStateWithLifecycle()
+                val settingsState = SettingsState(
+                    locationGranted = isGranted(Manifest.permission.ACCESS_COARSE_LOCATION, permissionVersion),
+                    calendarGranted = calendarPermission,
+                    calendars = calendars,
+                    hiddenCalendarIds = hiddenCalendars,
+                )
+                val settingsActions = remember {
+                    SettingsActions(
+                        onGrantLocation = { permissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION)) },
+                        onGrantCalendar = { permissionLauncher.launch(arrayOf(Manifest.permission.READ_CALENDAR)) },
+                        onToggleCalendar = viewModel::setCalendarVisible,
+                        onOpenAppSettings = ::openAppSettings,
+                    )
+                }
+                AppRoot(
+                    state = state,
+                    showSeconds = showSeconds,
+                    settingsState = settingsState,
+                    settingsActions = settingsActions,
+                    onScreenChanged = {
+                        screen = it
+                        if (it == Screen.Settings) viewModel.loadCalendars()
+                    },
+                )
             }
         }
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    private fun isGranted(permission: String, version: Int): Boolean =
+        ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+
+    private fun openAppSettings() {
+        startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null)))
     }
 
     private fun requestMissingPermissions() {
