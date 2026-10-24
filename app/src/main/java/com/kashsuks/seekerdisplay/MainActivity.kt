@@ -67,15 +67,16 @@ class MainActivity : ComponentActivity() {
                     TimeTicker.ticks(context, tickMs).collect { value = it }
                 }
                 val weather by viewModel.weather.collectAsStateWithLifecycle()
+                val playback by viewModel.playback.collectAsStateWithLifecycle()
                 val events by viewModel.events.collectAsStateWithLifecycle()
                 val calendarPermission by viewModel.calendarPermission.collectAsStateWithLifecycle()
-                val state = remember(now, weather, events, calendarPermission) {
+                val state = remember(now, weather, events, calendarPermission, playback) {
                     DashboardState(
                         now = now,
                         weather = weather,
                         events = events,
                         calendarPermission = calendarPermission,
-                        playback = PlaceholderData.playback,
+                        playback = playback,
                     )
                 }
                 val calendars by viewModel.calendars.collectAsStateWithLifecycle()
@@ -83,6 +84,7 @@ class MainActivity : ComponentActivity() {
                 val settingsState = SettingsState(
                     locationGranted = isGranted(Manifest.permission.ACCESS_COARSE_LOCATION, permissionVersion),
                     calendarGranted = calendarPermission,
+                    notificationAccessGranted = remember(permissionVersion) { viewModel.isNotificationAccessGranted() },
                     calendars = calendars,
                     hiddenCalendarIds = hiddenCalendars,
                 )
@@ -90,6 +92,7 @@ class MainActivity : ComponentActivity() {
                     SettingsActions(
                         onGrantLocation = { permissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION)) },
                         onGrantCalendar = { permissionLauncher.launch(arrayOf(Manifest.permission.READ_CALENDAR)) },
+                        onGrantNotificationAccess = { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) },
                         onToggleCalendar = viewModel::setCalendarVisible,
                         onOpenAppSettings = ::openAppSettings,
                     )
@@ -120,6 +123,13 @@ class MainActivity : ComponentActivity() {
         val wanted = arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.READ_CALENDAR)
         val missing = wanted.filter { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
         if (missing.isNotEmpty()) permissionLauncher.launch(missing.toTypedArray())
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Permissions and notification access are changed in system screens, so re-check on return.
+        permissionVersion++
+        viewModel.onPermissionsChanged()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {

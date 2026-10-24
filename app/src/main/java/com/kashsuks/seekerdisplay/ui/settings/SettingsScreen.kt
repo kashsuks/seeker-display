@@ -35,6 +35,7 @@ import com.kashsuks.seekerdisplay.ui.theme.DashText
 data class SettingsState(
     val locationGranted: Boolean,
     val calendarGranted: Boolean,
+    val notificationAccessGranted: Boolean,
     val calendars: List<DeviceCalendar>,
     val hiddenCalendarIds: Set<Long>,
 )
@@ -42,6 +43,7 @@ data class SettingsState(
 class SettingsActions(
     val onGrantLocation: () -> Unit,
     val onGrantCalendar: () -> Unit,
+    val onGrantNotificationAccess: () -> Unit,
     val onToggleCalendar: (calendarId: Long, visible: Boolean) -> Unit,
     val onOpenAppSettings: () -> Unit,
 )
@@ -70,6 +72,14 @@ fun SettingsScreen(
             item { SectionHeader("PERMISSIONS") }
             item { PermissionRow("Location", "Local weather", state.locationGranted, actions.onGrantLocation) }
             item { PermissionRow("Calendar", "Up Next events", state.calendarGranted, actions.onGrantCalendar) }
+            item {
+                PermissionRow(
+                    "Notification access",
+                    "Lets the app see and control Spotify on this phone",
+                    state.notificationAccessGranted,
+                    actions.onGrantNotificationAccess,
+                )
+            }
             item {
                 TextButton(onClick = actions.onOpenAppSettings) {
                     Text("Open app settings", style = DashText.EventSub, color = DashColors.Blue)
