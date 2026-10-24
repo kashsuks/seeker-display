@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -24,6 +25,7 @@ class SettingsRepository(context: Context) {
         val longitude = doublePreferencesKey("last_longitude")
         val city = stringPreferencesKey("last_city")
         val weatherJson = stringPreferencesKey("weather_cache_json")
+        val hiddenCalendars = stringSetPreferencesKey("hidden_calendar_ids")
     }
 
     val savedLocation: Flow<SavedLocation?> = store.data.map { prefs ->
@@ -37,6 +39,18 @@ class SettingsRepository(context: Context) {
             prefs[Keys.latitude] = location.latitude
             prefs[Keys.longitude] = location.longitude
             if (location.city != null) prefs[Keys.city] = location.city else prefs.remove(Keys.city)
+        }
+    }
+
+    /** Calendars the user switched off in Settings. Everything else is shown. */
+    val hiddenCalendarIds: Flow<Set<Long>> = store.data.map { prefs ->
+        prefs[Keys.hiddenCalendars].orEmpty().mapNotNull { it.toLongOrNull() }.toSet()
+    }
+
+    suspend fun setCalendarHidden(calendarId: Long, hidden: Boolean) {
+        store.edit { prefs ->
+            val current = prefs[Keys.hiddenCalendars].orEmpty()
+            prefs[Keys.hiddenCalendars] = if (hidden) current + calendarId.toString() else current - calendarId.toString()
         }
     }
 
