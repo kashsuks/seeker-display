@@ -32,6 +32,7 @@ import com.kashsuks.seekerdisplay.ui.DashboardViewModel
 import com.kashsuks.seekerdisplay.ui.Screen
 import com.kashsuks.seekerdisplay.ui.dashboard.DashboardState
 import com.kashsuks.seekerdisplay.ui.preview.PlaceholderData
+import com.kashsuks.seekerdisplay.ui.nowplaying.PlaybackActions
 import com.kashsuks.seekerdisplay.ui.settings.SettingsActions
 import com.kashsuks.seekerdisplay.ui.settings.SettingsState
 import com.kashsuks.seekerdisplay.ui.theme.SeekerDisplayTheme
@@ -97,14 +98,26 @@ class MainActivity : ComponentActivity() {
                         onOpenAppSettings = ::openAppSettings,
                     )
                 }
+                val playbackActions = remember {
+                    PlaybackActions(
+                        onPlayPause = viewModel::playPause,
+                        onNext = viewModel::next,
+                        onPrevious = viewModel::previous,
+                        onSeek = viewModel::seekTo,
+                        onShuffle = viewModel::setShuffle,
+                        onRepeat = viewModel::setRepeat,
+                    )
+                }
                 AppRoot(
                     state = state,
                     showSeconds = showSeconds,
                     settingsState = settingsState,
                     settingsActions = settingsActions,
+                    playbackActions = playbackActions,
                     onScreenChanged = {
                         screen = it
                         if (it == Screen.Settings) viewModel.loadCalendars()
+                        viewModel.setNowPlayingVisible(it == Screen.NowPlaying)
                     },
                 )
             }
