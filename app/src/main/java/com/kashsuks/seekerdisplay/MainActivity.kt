@@ -1,9 +1,13 @@
 package com.kashsuks.seekerdisplay
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -11,11 +15,16 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.kashsuks.seekerdisplay.core.TimeTicker
 import com.kashsuks.seekerdisplay.ui.AppRoot
+import com.kashsuks.seekerdisplay.ui.DashboardViewModel
 import com.kashsuks.seekerdisplay.ui.Screen
 import com.kashsuks.seekerdisplay.ui.dashboard.DashboardState
 import com.kashsuks.seekerdisplay.ui.preview.PlaceholderData
@@ -23,8 +32,17 @@ import com.kashsuks.seekerdisplay.ui.theme.SeekerDisplayTheme
 import java.time.ZonedDateTime
 
 class MainActivity : ComponentActivity() {
+    private val viewModel: DashboardViewModel by viewModels {
+        viewModelFactory { initializer { DashboardViewModel((application as SeekerApp).container) } }
+    }
+
+    private val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        viewModel.onPermissionsChanged()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        requestMissingPermissions()
         enableEdgeToEdge()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         hideSystemBars()
@@ -38,10 +56,11 @@ class MainActivity : ComponentActivity() {
                 val now by produceState(ZonedDateTime.now(), tickMs) {
                     TimeTicker.ticks(context, tickMs).collect { value = it }
                 }
-                val state = remember(now) {
+                val weather by viewModel.weather.collectAsStateWithLifecycle()
+                val state = remember(now, weather) {
                     DashboardState(
                         now = now,
-                        weather = PlaceholderData.weather,
+                        weather = weather,
                         events = PlaceholderData.events(now),
                         calendarPermission = true,
                         playback = PlaceholderData.playback,
@@ -50,6 +69,12 @@ class MainActivity : ComponentActivity() {
                 AppRoot(state, showSeconds, onScreenChanged = { screen = it })
             }
         }
+    }
+
+    private fun requestMissingPermissions() {
+        val wanted = arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION)
+        val missing = wanted.filter { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
+        if (missing.isNotEmpty()) permissionLauncher.launch(missing.toTypedArray())
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
