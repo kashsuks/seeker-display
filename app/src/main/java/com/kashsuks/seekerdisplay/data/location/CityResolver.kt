@@ -1,12 +1,17 @@
 package com.kashsuks.seekerdisplay.data.location
 
 import android.content.Context
+import android.location.Address
 import android.location.Geocoder
+import android.os.Build
+import androidx.annotation.RequiresApi
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import java.util.Locale
 import kotlin.coroutines.resume
@@ -26,12 +31,23 @@ class CityResolver(private val context: Context, private val client: HttpClient)
     private suspend fun platformGeocode(latitude: Double, longitude: Double): String? {
         if (!Geocoder.isPresent()) return null
         val geocoder = Geocoder(context, Locale.getDefault())
-        return suspendCancellableCoroutine { cont ->
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            geocodeAsync(geocoder, latitude, longitude)
+        } else {
+            withContext(Dispatchers.IO) {
+                @Suppress("DEPRECATION")
+                runCatching { geocoder.getFromLocation(latitude, longitude, 1)?.firstOrNull()?.let(::placeName) }.getOrNull()
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private suspend fun geocodeAsync(geocoder: Geocoder, latitude: Double, longitude: Double): String? =
+        suspendCancellableCoroutine { cont ->
             runCatching {
                 geocoder.getFromLocation(latitude, longitude, 1, object : Geocoder.GeocodeListener {
-                    override fun onGeocode(addresses: MutableList<android.location.Address>) {
-                        val address = addresses.firstOrNull()
-                        if (cont.isActive) cont.resume(address?.locality ?: address?.subAdminArea)
+                    override fun onGeocode(addresses: MutableList<Address>) {
+                        if (cont.isActive) cont.resume(addresses.firstOrNull()?.let(::placeName))
                     }
 
                     override fun onError(errorMessage: String?) {
@@ -40,7 +56,8 @@ class CityResolver(private val context: Context, private val client: HttpClient)
                 })
             }.onFailure { if (cont.isActive) cont.resume(null) }
         }
-    }
+
+    private fun placeName(address: Address): String? = address.locality ?: address.subAdminArea
 
     private suspend fun networkGeocode(latitude: Double, longitude: Double): String? = runCatching {
         val dto: ReverseGeocodeDto = client.get("https://api.bigdatacloud.net/data/reverse-geocode-client") {
