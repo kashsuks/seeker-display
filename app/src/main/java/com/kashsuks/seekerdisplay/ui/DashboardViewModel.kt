@@ -8,6 +8,7 @@ import com.kashsuks.seekerdisplay.data.media.ActivePlayback
 import com.kashsuks.seekerdisplay.data.media.PlaybackSnapshot
 import com.kashsuks.seekerdisplay.data.weather.WeatherData
 import com.kashsuks.seekerdisplay.di.AppContainer
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -44,7 +45,15 @@ class DashboardViewModel(private val container: AppContainer) : ViewModel() {
 
     private fun withSource(block: suspend (com.kashsuks.seekerdisplay.data.media.MediaSource) -> Unit) {
         val source = activePlayback.value?.source ?: return
-        viewModelScope.launch { block(source) }
+        viewModelScope.launch {
+            // A dropped Wi-Fi connection mid-press must not crash the app; the next poll corrects the UI.
+            try {
+                block(source)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+            }
+        }
     }
 
     private val _calendars = MutableStateFlow<List<DeviceCalendar>>(emptyList())
@@ -60,6 +69,29 @@ class DashboardViewModel(private val container: AppContainer) : ViewModel() {
 
     fun setCalendarVisible(calendarId: Long, visible: Boolean) {
         viewModelScope.launch { container.settings.setCalendarHidden(calendarId, hidden = !visible) }
+    }
+
+    val bridgeAddress: StateFlow<String> = container.settings.bridgeAddress
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
+    val bridgeToken: StateFlow<String> = container.settings.bridgeToken
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
+
+    private val _bridgeTestResult = MutableStateFlow<String?>(null)
+    val bridgeTestResult: StateFlow<String?> = _bridgeTestResult.asStateFlow()
+
+    fun setBridgeAddress(address: String) {
+        _bridgeTestResult.value = null
+        viewModelScope.launch { container.settings.setBridgeAddress(address) }
+    }
+
+    fun setBridgeToken(token: String) {
+        _bridgeTestResult.value = null
+        viewModelScope.launch { container.settings.setBridgeToken(token) }
+    }
+
+    fun testBridge() {
+        _bridgeTestResult.value = "Testing…"
+        viewModelScope.launch { _bridgeTestResult.value = container.macBridge.testConnection() }
     }
 
     fun isNotificationAccessGranted(): Boolean = container.phoneMedia.isAccessGranted()
