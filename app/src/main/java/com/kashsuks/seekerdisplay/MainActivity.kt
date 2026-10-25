@@ -12,6 +12,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -26,6 +27,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.kashsuks.seekerdisplay.core.NightWindow
 import com.kashsuks.seekerdisplay.core.TimeTicker
 import com.kashsuks.seekerdisplay.ui.AppRoot
 import com.kashsuks.seekerdisplay.ui.DashboardViewModel
@@ -60,7 +62,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             SeekerDisplayTheme {
                 val context = LocalContext.current
-                val showSeconds = false
+                val display by viewModel.display.collectAsStateWithLifecycle()
+                val showSeconds = display.showSeconds
                 var screen by remember { mutableStateOf(Screen.Dashboard) }
                 // Seconds only tick while the focus clock is on screen, to save battery elsewhere.
                 val tickMs = if (screen == Screen.FocusClock && showSeconds) 1_000L else 60_000L
@@ -94,6 +97,7 @@ class MainActivity : ComponentActivity() {
                     bridgeAddress = bridgeAddress,
                     bridgeToken = bridgeToken,
                     bridgeTestResult = bridgeTestResult,
+                    display = display,
                 )
                 val settingsActions = remember {
                     SettingsActions(
@@ -105,8 +109,15 @@ class MainActivity : ComponentActivity() {
                         onBridgeAddressChange = viewModel::setBridgeAddress,
                         onBridgeTokenChange = viewModel::setBridgeToken,
                         onTestBridge = viewModel::testBridge,
+                        onShowSecondsChange = viewModel::setShowSeconds,
+                        onNightDimChange = viewModel::setNightDimEnabled,
+                        onNightWindowChange = viewModel::setNightWindow,
                     )
                 }
+                val nightActive = display.nightDimEnabled &&
+                    NightWindow.isActive(now.hour * 60 + now.minute, display.nightStartMinute, display.nightEndMinute)
+                LaunchedEffect(nightActive) { setNightBrightness(nightActive) }
+
                 val playbackActions = remember {
                     PlaybackActions(
                         onPlayPause = viewModel::playPause,
@@ -159,11 +170,22 @@ class MainActivity : ComponentActivity() {
         if (hasFocus) hideSystemBars()
     }
 
+    /** Drops the screen to a very low brightness overnight, and returns control to the system after. */
+    private fun setNightBrightness(night: Boolean) {
+        window.attributes = window.attributes.apply {
+            screenBrightness = if (night) NIGHT_BRIGHTNESS else WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        }
+    }
+
     private fun hideSystemBars() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, window.decorView).apply {
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             hide(WindowInsetsCompat.Type.systemBars())
         }
+    }
+
+    private companion object {
+        const val NIGHT_BRIGHTNESS = 0.03f
     }
 }

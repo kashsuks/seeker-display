@@ -34,7 +34,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.kashsuks.seekerdisplay.core.NightWindow
 import com.kashsuks.seekerdisplay.data.calendar.DeviceCalendar
+import com.kashsuks.seekerdisplay.data.settings.DisplaySettings
 import com.kashsuks.seekerdisplay.ui.theme.DashColors
 import com.kashsuks.seekerdisplay.ui.theme.DashText
 
@@ -47,6 +49,7 @@ data class SettingsState(
     val bridgeAddress: String,
     val bridgeToken: String,
     val bridgeTestResult: String?,
+    val display: DisplaySettings,
 )
 
 class SettingsActions(
@@ -58,6 +61,9 @@ class SettingsActions(
     val onBridgeAddressChange: (String) -> Unit,
     val onBridgeTokenChange: (String) -> Unit,
     val onTestBridge: () -> Unit,
+    val onShowSecondsChange: (Boolean) -> Unit,
+    val onNightDimChange: (Boolean) -> Unit,
+    val onNightWindowChange: (startMinute: Int, endMinute: Int) -> Unit,
 )
 
 @Composable
@@ -78,6 +84,18 @@ fun SettingsScreen(
                         Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", tint = DashColors.Primary)
                     }
                     Text("Settings", style = DashText.EventHero, color = DashColors.Primary)
+                }
+            }
+
+            item { SectionHeader("DISPLAY") }
+            item { SwitchRow("Show seconds on the focus clock", state.display.showSeconds, actions.onShowSecondsChange) }
+            item { SwitchRow("Dim the screen at night", state.display.nightDimEnabled, actions.onNightDimChange) }
+            if (state.display.nightDimEnabled) {
+                item {
+                    HourStepper("Dim from", state.display.nightStartMinute) { actions.onNightWindowChange(it, state.display.nightEndMinute) }
+                }
+                item {
+                    HourStepper("Back to normal at", state.display.nightEndMinute) { actions.onNightWindowChange(state.display.nightStartMinute, it) }
                 }
             }
 
@@ -127,6 +145,27 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SwitchRow(title: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clickable { onChange(!checked) }.padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(title, style = DashText.EventRow, color = DashColors.Primary, modifier = Modifier.weight(1f))
+        Switch(checked = checked, onCheckedChange = onChange)
+    }
+}
+
+@Composable
+private fun HourStepper(title: String, minute: Int, onChange: (Int) -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(title, style = DashText.EventRow, color = DashColors.Secondary, modifier = Modifier.weight(1f))
+        TextButton(onClick = { onChange(NightWindow.shiftHours(minute, -1)) }) { Text("−", style = DashText.EventHero, color = DashColors.Blue) }
+        Text(NightWindow.format(minute), style = DashText.EventRow, color = DashColors.Primary)
+        TextButton(onClick = { onChange(NightWindow.shiftHours(minute, 1)) }) { Text("+", style = DashText.EventHero, color = DashColors.Blue) }
     }
 }
 

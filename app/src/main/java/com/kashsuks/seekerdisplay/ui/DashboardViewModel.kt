@@ -6,6 +6,7 @@ import com.kashsuks.seekerdisplay.data.calendar.CalendarEvent
 import com.kashsuks.seekerdisplay.data.calendar.DeviceCalendar
 import com.kashsuks.seekerdisplay.data.media.ActivePlayback
 import com.kashsuks.seekerdisplay.data.media.PlaybackSnapshot
+import com.kashsuks.seekerdisplay.data.settings.DisplaySettings
 import com.kashsuks.seekerdisplay.data.weather.WeatherData
 import com.kashsuks.seekerdisplay.di.AppContainer
 import kotlinx.coroutines.CancellationException
@@ -69,6 +70,21 @@ class DashboardViewModel(private val container: AppContainer) : ViewModel() {
 
     fun setCalendarVisible(calendarId: Long, visible: Boolean) {
         viewModelScope.launch { container.settings.setCalendarHidden(calendarId, hidden = !visible) }
+    }
+
+    val display: StateFlow<DisplaySettings> = container.settings.display
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DisplaySettings())
+
+    fun setShowSeconds(enabled: Boolean) {
+        viewModelScope.launch { container.settings.setShowSeconds(enabled) }
+    }
+
+    fun setNightDimEnabled(enabled: Boolean) {
+        viewModelScope.launch { container.settings.setNightDimEnabled(enabled) }
+    }
+
+    fun setNightWindow(startMinute: Int, endMinute: Int) {
+        viewModelScope.launch { container.settings.setNightWindow(startMinute, endMinute) }
     }
 
     val bridgeAddress: StateFlow<String> = container.settings.bridgeAddress
