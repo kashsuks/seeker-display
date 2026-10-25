@@ -6,8 +6,6 @@ import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -25,6 +23,8 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -142,10 +142,17 @@ private fun FlapHalf(
             .background(CardColor)
             .clipToBounds(),
     ) {
+        // Measure the digit at full card size, but report only half the height and shift it so
+        // that the top or bottom half is what shows. (An oversized child would be centred instead.)
         Box(
-            Modifier
-                .requiredSize(width, height)
-                .offset(y = if (half == HalfSide.Top) 0.dp else -(height / 2)),
+            Modifier.layout { measurable, _ ->
+                val fullWidth = width.roundToPx()
+                val fullHeight = height.roundToPx()
+                val placeable = measurable.measure(Constraints.fixed(fullWidth, fullHeight))
+                layout(fullWidth, fullHeight / 2) {
+                    placeable.place(0, if (half == HalfSide.Top) 0 else -(fullHeight / 2))
+                }
+            },
             contentAlignment = Alignment.Center,
         ) {
             Text(digit.toString(), style = style)
