@@ -19,10 +19,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,6 +44,9 @@ data class SettingsState(
     val notificationAccessGranted: Boolean,
     val calendars: List<DeviceCalendar>,
     val hiddenCalendarIds: Set<Long>,
+    val bridgeAddress: String,
+    val bridgeToken: String,
+    val bridgeTestResult: String?,
 )
 
 class SettingsActions(
@@ -46,6 +55,9 @@ class SettingsActions(
     val onGrantNotificationAccess: () -> Unit,
     val onToggleCalendar: (calendarId: Long, visible: Boolean) -> Unit,
     val onOpenAppSettings: () -> Unit,
+    val onBridgeAddressChange: (String) -> Unit,
+    val onBridgeTokenChange: (String) -> Unit,
+    val onTestBridge: () -> Unit,
 )
 
 @Composable
@@ -83,6 +95,23 @@ fun SettingsScreen(
             item {
                 TextButton(onClick = actions.onOpenAppSettings) {
                     Text("Open app settings", style = DashText.EventSub, color = DashColors.Blue)
+                }
+            }
+
+            item { SectionHeader("MAC BRIDGE (SPOTIFY ON YOUR LAPTOP)") }
+            item {
+                Hint("Run companion/spotify_bridge.py on your Mac, then paste its access token here.")
+            }
+            item {
+                SettingsField("Token", state.bridgeToken, actions.onBridgeTokenChange, placeholder = "From the bridge's output")
+            }
+            item {
+                SettingsField("Address (optional)", state.bridgeAddress, actions.onBridgeAddressChange, placeholder = "Leave empty to auto-discover, or 192.168.1.5:8765")
+            }
+            item {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = actions.onTestBridge) { Text("Test connection", style = DashText.EventRow, color = DashColors.Blue) }
+                    state.bridgeTestResult?.let { Text(it, style = DashText.EventSub, color = DashColors.Secondary, modifier = Modifier.padding(start = 8.dp)) }
                 }
             }
 
@@ -139,4 +168,29 @@ private fun CalendarRow(calendar: DeviceCalendar, visible: Boolean, onToggle: (B
         }
         Switch(checked = visible, onCheckedChange = onToggle)
     }
+}
+
+/**
+ * Keeps its own text so typing never waits on storage. The stored value is only adopted until the
+ * user starts typing, which covers the first load from DataStore.
+ */
+@Composable
+private fun SettingsField(label: String, value: String, onChange: (String) -> Unit, placeholder: String) {
+    var text by remember { mutableStateOf(value) }
+    var edited by remember { mutableStateOf(false) }
+    LaunchedEffect(value) {
+        if (!edited) text = value
+    }
+    OutlinedTextField(
+        value = text,
+        onValueChange = {
+            edited = true
+            text = it
+            onChange(it)
+        },
+        label = { Text(label) },
+        placeholder = { Text(placeholder) },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+    )
 }

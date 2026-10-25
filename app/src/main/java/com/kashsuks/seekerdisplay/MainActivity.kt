@@ -81,6 +81,9 @@ class MainActivity : ComponentActivity() {
                     )
                 }
                 val calendars by viewModel.calendars.collectAsStateWithLifecycle()
+                val bridgeAddress by viewModel.bridgeAddress.collectAsStateWithLifecycle()
+                val bridgeToken by viewModel.bridgeToken.collectAsStateWithLifecycle()
+                val bridgeTestResult by viewModel.bridgeTestResult.collectAsStateWithLifecycle()
                 val hiddenCalendars by viewModel.hiddenCalendarIds.collectAsStateWithLifecycle()
                 val settingsState = SettingsState(
                     locationGranted = isGranted(Manifest.permission.ACCESS_COARSE_LOCATION, permissionVersion),
@@ -88,6 +91,9 @@ class MainActivity : ComponentActivity() {
                     notificationAccessGranted = remember(permissionVersion) { viewModel.isNotificationAccessGranted() },
                     calendars = calendars,
                     hiddenCalendarIds = hiddenCalendars,
+                    bridgeAddress = bridgeAddress,
+                    bridgeToken = bridgeToken,
+                    bridgeTestResult = bridgeTestResult,
                 )
                 val settingsActions = remember {
                     SettingsActions(
@@ -96,6 +102,9 @@ class MainActivity : ComponentActivity() {
                         onGrantNotificationAccess = { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) },
                         onToggleCalendar = viewModel::setCalendarVisible,
                         onOpenAppSettings = ::openAppSettings,
+                        onBridgeAddressChange = viewModel::setBridgeAddress,
+                        onBridgeTokenChange = viewModel::setBridgeToken,
+                        onTestBridge = viewModel::testBridge,
                     )
                 }
                 val playbackActions = remember {
