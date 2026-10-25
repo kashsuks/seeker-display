@@ -26,6 +26,8 @@ class SettingsRepository(context: Context) {
         val city = stringPreferencesKey("last_city")
         val weatherJson = stringPreferencesKey("weather_cache_json")
         val hiddenCalendars = stringSetPreferencesKey("hidden_calendar_ids")
+        val bridgeAddress = stringPreferencesKey("bridge_address")
+        val bridgeToken = stringPreferencesKey("bridge_token")
     }
 
     val savedLocation: Flow<SavedLocation?> = store.data.map { prefs ->
@@ -52,6 +54,18 @@ class SettingsRepository(context: Context) {
             val current = prefs[Keys.hiddenCalendars].orEmpty()
             prefs[Keys.hiddenCalendars] = if (hidden) current + calendarId.toString() else current - calendarId.toString()
         }
+    }
+
+    /** Manual `host[:port]` for the Mac bridge; blank means find it automatically. */
+    val bridgeAddress: Flow<String> = store.data.map { it[Keys.bridgeAddress].orEmpty() }
+    val bridgeToken: Flow<String> = store.data.map { it[Keys.bridgeToken].orEmpty() }
+
+    suspend fun setBridgeAddress(address: String) {
+        store.edit { it[Keys.bridgeAddress] = address.trim() }
+    }
+
+    suspend fun setBridgeToken(token: String) {
+        store.edit { it[Keys.bridgeToken] = token.trim() }
     }
 
     suspend fun weatherCache(): String? = store.data.first()[Keys.weatherJson]
