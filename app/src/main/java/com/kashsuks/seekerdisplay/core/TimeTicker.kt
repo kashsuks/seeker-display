@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -40,7 +41,7 @@ object TimeTicker {
             addAction(Intent.ACTION_TIME_CHANGED)
             addAction(Intent.ACTION_TIMEZONE_CHANGED)
         }
-        context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
         awaitClose { context.unregisterReceiver(receiver) }
     }
 
