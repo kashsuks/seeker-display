@@ -8,7 +8,7 @@ import java.util.Locale
 
 /** Pure text helpers for the Up Next list, kept free of Android types so they are unit-testable. */
 object EventLabels {
-    private val fullWeekday = DateTimeFormatter.ofPattern("EEEE", Locale.getDefault())
+    private fun fullWeekday() = DateTimeFormatter.ofPattern("EEEE", Locale.getDefault())
 
     private fun at(ms: Long, now: ZonedDateTime): ZonedDateTime = Instant.ofEpochMilli(ms).atZone(now.zone)
 
@@ -17,7 +17,7 @@ object EventLabels {
         return when (diff) {
             0L -> "Today"
             1L -> "Tomorrow"
-            else -> date.format(fullWeekday)
+            else -> date.format(fullWeekday())
         }
     }
 
