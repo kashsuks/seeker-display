@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
@@ -64,13 +66,25 @@ class CalendarRepository(
         .map { hidden -> loadUpcoming(hidden) }
         .flowOn(Dispatchers.IO)
 
-    private fun providerChanges(): Flow<Unit> = callbackFlow {
+    /**
+     * Watches the provider for edits, but only while READ_CALENDAR is held: registering an observer
+     * without it throws. Granting the permission calls [refreshNow], which re-evaluates this.
+     */
+    private fun providerChanges(): Flow<Unit> = permissionChanges.onStart { emit(Unit) }.flatMapLatest {
+        if (hasPermission()) observeProvider() else emptyFlow()
+    }
+
+    private fun observeProvider(): Flow<Unit> = callbackFlow {
         val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
             override fun onChange(selfChange: Boolean) {
                 trySend(Unit)
             }
         }
-        resolver.registerContentObserver(CalendarContract.CONTENT_URI, true, observer)
+        try {
+            resolver.registerContentObserver(CalendarContract.CONTENT_URI, true, observer)
+        } catch (_: SecurityException) {
+            // Permission was revoked between the check and now; the next refresh will retry.
+        }
         awaitClose { resolver.unregisterContentObserver(observer) }
     }
 
