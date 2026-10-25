@@ -29,7 +29,12 @@ fun WeatherPanel(weather: WeatherData?, modifier: Modifier = Modifier) {
     Column(modifier) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Column {
-                Text(weather.city.uppercase(), style = DashText.City, color = DashColors.Blue)
+                Text(
+                    // A trailing dot means the forecast is from the cache because a refresh failed.
+                    text = weather.city.uppercase() + if (weather.isStale) " •" else "",
+                    style = DashText.City,
+                    color = DashColors.Blue,
+                )
                 Text("${weather.tempC}°", style = DashText.Temp, color = DashColors.Primary)
             }
             Column(horizontalAlignment = Alignment.End) {

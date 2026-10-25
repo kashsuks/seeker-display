@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kashsuks.seekerdisplay.core.TimeFormat
+import com.kashsuks.seekerdisplay.core.burnInShift
 import com.kashsuks.seekerdisplay.ui.theme.DashColors
 import com.kashsuks.seekerdisplay.ui.theme.DashText
 import java.time.ZonedDateTime
@@ -46,7 +47,7 @@ fun FocusClockScreen(
         val cardHeight: Dp = minOf(maxHeight * 0.62f, maxWidth * 0.94f / widthUnits)
         val cardWidth = cardHeight * 0.62f
 
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.burnInShift(), horizontalAlignment = Alignment.CenterHorizontally) {
             val digits = buildString {
                 append("%02d".format(now.hour))
                 append("%02d".format(now.minute))

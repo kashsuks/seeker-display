@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import com.kashsuks.seekerdisplay.core.burnInShift
 import com.kashsuks.seekerdisplay.ui.theme.DashColors
 
 @Composable
@@ -32,7 +33,8 @@ fun DashboardScreen(
             .background(DashColors.Black)
             .pointerInput(Unit) { detectTapGestures(onLongPress = { onLongPress() }) }
             .safeDrawingPadding()
-            .padding(horizontal = 36.dp, vertical = 20.dp),
+            .padding(horizontal = 36.dp, vertical = 20.dp)
+            .burnInShift(),
         horizontalArrangement = Arrangement.spacedBy(32.dp),
     ) {
         Column(
