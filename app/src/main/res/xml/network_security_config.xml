@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The Mac bridge speaks plain HTTP on the local network, and Android can't allow cleartext for an IP
+    range, so it is allowed generally. The bridge is protected by its access token. Personal app only.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
