@@ -39,7 +39,7 @@ private const val FirstHalfMs = 240
 private const val SecondHalfMs = 360
 
 /** Which way the flaps tilt. If the perspective looks inverted on a device, flip this to -1f. */
-private const val FlipDirection = 1f
+private const val FlipDirection = -1f
 
 /**
  * A single split-flap digit. When [digit] changes the old top half folds down over the hinge,
